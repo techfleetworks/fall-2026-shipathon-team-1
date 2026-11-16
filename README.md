@@ -39,7 +39,8 @@ The product is scoped around two user journeys — the **giver** and the **recei
 ### 🎁 Milestone 1 — Giver: Bundle Posting
 
 - **Bundle listing in one flow:** a giver uploads one or a few photos and publishes multiple listings together, instead of creating a separate listing per item.
-- **Quick per-item fields with bundle-level defaults:** category, size, and condition are set fast, with shared defaults applied across the bundle to cut repetitive entry.
+- **AI-assisted drafts:** photos are read server-side to draft one editable listing per item (category, size, condition). Suggestions are always shown transparently and confirmed — nothing auto-publishes.
+- **Quick per-item fields with bundle-level defaults:** a manual fallback when AI is unsure — set one size/condition and apply it across the bundle.
 - **Children-only scope:** every listing belongs to a children's-item category, so the catalogue stays relevant.
 
 ### 🔎 Milestone 2 — Receiver & Shared Trust: Discovery and Live Status
@@ -50,7 +51,7 @@ The product is scoped around two user journeys — the **giver** and the **recei
 - **Pickup coordination:** a lightweight handoff flow once an item is accepted, with a nudge to mark items as `gone`.
 
 > [!NOTE]
-> The original PRD proposed an AI/computer-vision bundle flow (auto-detecting and categorizing items from a photo). **That AI feature is intentionally out of scope for this build.** Bundle posting uses the manual fields + bundle-level defaults flow described above.
+> This build implements the **giver side** of the app. The AI extraction runs as a **server-side stub** that returns realistic, editable drafts (`app/api/ai/extract`); set `AI_PROVIDER` + a key in `.env.local` to swap in a real multimodal model. Everything runs on a **seeded in-memory store** with no external services — add Supabase credentials to switch persistence on. Receiver-side discovery is stubbed as a preview.
 
 ---
 
@@ -67,12 +68,11 @@ The product is scoped around two user journeys — the **giver** and the **recei
 
 ## 🚀 Getting Started
 
-> The codebase is in early setup. The steps below reflect the intended stack and will be finalized as the app scaffolding lands.
+> Runs out of the box on seeded mock data — **no Supabase or AI keys required.**
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (LTS)
-- A [Supabase](https://supabase.com/) project (database + auth)
+- [Node.js](https://nodejs.org/) 18.18+ (LTS recommended)
 - npm (or pnpm / yarn)
 
 ### Setup
@@ -85,15 +85,29 @@ cd fall-2026-shipathon-team-1
 # 2. Install dependencies
 npm install
 
-# 3. Configure environment
-cp .env.example .env.local
-# then fill in your Supabase URL and keys
-
-# 4. Run the dev server
+# 3. Run the dev server
 npm run dev
 ```
 
 The app will be available at `http://localhost:3000`.
+
+### Optional: real services
+
+```bash
+cp .env.example .env.local      # then fill in values
+```
+
+- **Supabase** — run `supabase/schema.sql` then `supabase/seed.sql`, and set `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` (+ `SUPABASE_SERVICE_ROLE_KEY` for the API routes).
+- **AI extraction** — set `AI_PROVIDER` and the matching API key to replace the stub in `app/api/ai/extract`.
+
+### Project structure
+
+| Path | What's there |
+|---|---|
+| `app/` | Screens (home, posting flow, listing, messages, chat, profile) + `app/api/*` route handlers |
+| `components/` | Reusable UI (Button, Chip, ItemCard, TextInput, BottomNav, StepIndicator, ActionCard, …) |
+| `lib/` | Types, design-token-aware helpers, seed data, the client store, Supabase + AI scaffolding |
+| `supabase/` | `schema.sql` and `seed.sql` |
 
 ---
 
