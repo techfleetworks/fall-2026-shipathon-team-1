@@ -1,0 +1,22 @@
+{
+  "name": "my-village-giver-flow",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "My Village shipathon PoC: Giver flow (one photo, many listings)",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build:css": "tailwindcss -i ./src/input.css -o ./public/styles.css --minify",
+    "build:config": "node scripts/build-config.mjs",
+    "build": "npm run build:css && npm run build:config",
+    "dev:css": "tailwindcss -i ./src/input.css -o ./public/styles.css --watch"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

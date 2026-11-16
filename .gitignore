@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.vercel/
+.DS_Store
+# generated at build time
+public/styles.css
+public/config.js

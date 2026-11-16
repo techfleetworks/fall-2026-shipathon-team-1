@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body { @apply bg-surface-100 font-sans text-body text-ink antialiased; }
+  :focus-visible { outline: 2px solid #EEAF1B; outline-offset: 2px; }
+}
+
+@layer components {
+  .btn { @apply inline-flex min-h-[48px] items-center justify-center rounded-lg px-5 text-btn transition-colors disabled:cursor-not-allowed; }
+  .btn-primary { @apply btn bg-brand text-ink-on-brand active:bg-brand-hover disabled:bg-surface-300 disabled:text-ink-subtle; }
+  .btn-secondary { @apply btn border border-line bg-white text-ink active:bg-surface-200 disabled:border-0 disabled:bg-surface-300 disabled:text-ink-subtle; }
+  .btn-tertiary { @apply btn text-ink active:text-ink-muted disabled:text-ink-subtle; }
+  .chip { @apply inline-flex min-h-[44px] items-center gap-2 rounded-sm border border-line bg-surface-100 px-3 text-label text-ink; }
+  .chip[aria-pressed="true"], .chip-selected { @apply border-brand bg-brand-subtle; }
+  .field { @apply min-h-[48px] w-full rounded-md border border-line bg-surface-100 px-3 text-body text-ink placeholder:text-ink-subtle focus:border-line-strong; }
+  .card { @apply rounded-md bg-surface-200 shadow-sm; }
+}
