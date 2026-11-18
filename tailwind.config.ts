@@ -32,6 +32,10 @@ const config: Config = {
         success: "rgb(var(--success) / <alpha-value>)",
         error: "rgb(var(--error) / <alpha-value>)",
         warning: "rgb(var(--warning) / <alpha-value>)",
+        positive: {
+          DEFAULT: "rgb(var(--positive) / <alpha-value>)",
+          subtle: "rgb(var(--positive-subtle) / <alpha-value>)",
+        },
       },
       borderRadius: {
         sm: "8px",

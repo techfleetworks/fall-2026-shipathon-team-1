@@ -51,7 +51,17 @@ The product is scoped around two user journeys — the **giver** and the **recei
 - **Pickup coordination:** a lightweight handoff flow once an item is accepted, with a nudge to mark items as `gone`.
 
 > [!NOTE]
-> This build implements the **giver side** of the app. The AI extraction runs as a **server-side stub** that returns realistic, editable drafts (`app/api/ai/extract`); set `AI_PROVIDER` + a key in `.env.local` to swap in a real multimodal model. Everything runs on a **seeded in-memory store** with no external services — add Supabase credentials to switch persistence on. Receiver-side discovery is stubbed as a preview.
+> The UI follows the **Figma mockups** ([Designs file](https://www.figma.com/design/wX75a3VccCdUdeQY8NBkte/Designs?node-id=238-6873)). It's a **single unified user** who both gives and receives — no role switch. The bottom nav is **Home · Search · Inbox · Profile**, and **Inbox** holds **Requests** (with **Sent** / **Received** sub-tabs) and **Messages**. Status is a single shared source of truth, so a change on one side shows instantly on the other. The AI extraction runs as a **server-side stub** (`app/api/ai/extract`); set `AI_PROVIDER` + a key in `.env.local` to swap in a real multimodal model. Everything runs on a **seeded in-memory store** (persisted to `localStorage`) with no external services — add Supabase credentials to switch persistence on.
+
+### What you can demo (as John)
+
+- **Give away:** Home → *Give away* → feature intro → camera / add photos → detected categories → per-category details → pick-up location + listing preview → publish.
+- **Receive requests:** Inbox → *Requests · Received* → ordered FIFO queue with auto-decline countdowns; Accept / Decline the current #1 (declining promotes the next), then *Start chat* / *Undo*.
+- **Search & claim:** Search (category + size required) → results (two-photo cards) → item detail with the transparent queue → *I'm interested* / *Join interest queue* → turn on status updates → *Withdraw interest*.
+- **Track requests:** Inbox → *Requests · Sent* shows every outcome — Waiting (with countdown), Accepted, found a home, timed out.
+- **Coordinate pickup:** Inbox → *Messages* → chat with quick replies, the pick-up address card, propose/confirm a time, and *Mark as complete*.
+
+The seed starts John first in line on one item, waiting behind someone on another, accepted on a third (so chat is populated), with his own give-aways already drawing requests.
 
 ---
 
@@ -104,8 +114,8 @@ cp .env.example .env.local      # then fill in values
 
 | Path | What's there |
 |---|---|
-| `app/` | Screens (home, posting flow, listing, messages, chat, profile) + `app/api/*` route handlers |
-| `components/` | Reusable UI (Button, Chip, ItemCard, TextInput, BottomNav, StepIndicator, ActionCard, …) |
+| `app/` | Screens — `page` (home), `search`, `browse`, `item/[id]`, `post` (give-away flow), `inbox` (Requests + Messages) and `inbox/[threadId]` (chat), `profile`, plus `app/api/*` route handlers |
+| `components/` | Reusable UI (Button, Chip, ItemCard, Tag, StatusBadge, PosterRow, InterestQueue, TextInput, BottomNav, StepIndicator, TopBar, …) |
 | `lib/` | Types, design-token-aware helpers, seed data, the client store, Supabase + AI scaffolding |
 | `supabase/` | `schema.sql` and `seed.sql` |
 
@@ -125,12 +135,14 @@ The release is validated against:
 
 ## 🗺️ Roadmap
 
-- [ ] **MVP** — prove the core giver → receiver exchange flow end to end.
-- [ ] Bundle posting with per-item fields and bundle-level defaults.
-- [ ] Needs-based discovery (category, size, location filters).
-- [ ] Live listing status (`requested / accepted / gone`).
-- [ ] **MMP** — anti-ghosting (auto-decline/expire), pickup coordination, notifications.
-- [ ] Mobile adaptation.
+- [x] **MVP** — prove the core giver → receiver exchange flow end to end.
+- [x] Bundle posting with per-item fields, bundle-level defaults, and a pickup-address step.
+- [x] Needs-based discovery (category, size, location, gender, condition filters).
+- [x] Live listing status (`available / requested / accepted / gone`), shared across both sides.
+- [x] Ordered FIFO interest queue with join/withdraw (receiver) and accept/decline the current #1 (giver).
+- [x] Pickup coordination in chat (share address → propose time → arrange → complete) with quick replies.
+- [ ] Wire live Supabase persistence + real multimodal AI extraction.
+- [ ] Server-enforced auto-decline/expire timer and push notifications.
 
 ### Key risks we're watching
 

@@ -1,8 +1,9 @@
 -- ============================================================
--- My Village — Supabase schema (giver side)
+-- My Village — Supabase schema (giver + receiver)
 -- Run in the Supabase SQL editor, or via `supabase db push`.
 -- Mirrors lib/types.ts. The app runs on the in-memory mock store
 -- until NEXT_PUBLIC_SUPABASE_URL / ANON_KEY are set.
+-- Status is the single source of truth, shared by both sides.
 -- ============================================================
 
 create extension if not exists "pgcrypto";
@@ -25,10 +26,20 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  create type message_type as enum ('text', 'quick', 'system');
+  create type message_type as enum ('text', 'quick', 'system', 'pickup');
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create type item_gender as enum ('boy', 'girl', 'neutral');
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create type pickup_status as enum ('none', 'address_shared', 'time_proposed', 'arranged', 'complete');
 exception when duplicate_object then null; end $$;
 
 -- Tables ------------------------------------------------------
+-- A user may be a giver, a receiver, or both (role is a client-side
+-- view toggle in the demo; here identities are just people).
 create table if not exists givers (
   id         uuid primary key default gen_random_uuid(),
   name       text not null,
@@ -37,12 +48,21 @@ create table if not exists givers (
   created_at timestamptz not null default now()
 );
 
-create table if not exists bundles (
+create table if not exists receivers (
   id         uuid primary key default gen_random_uuid(),
-  giver_id   uuid not null references givers(id) on delete cascade,
-  photos     text[] not null default '{}',
-  status     text not null default 'published',
+  name       text not null,
+  avatar     text,
+  location   text,
   created_at timestamptz not null default now()
+);
+
+create table if not exists bundles (
+  id             uuid primary key default gen_random_uuid(),
+  giver_id       uuid not null references givers(id) on delete cascade,
+  photos         text[] not null default '{}',
+  status         text not null default 'published',
+  pickup_address text,
+  created_at     timestamptz not null default now()
 );
 
 create table if not exists items (
@@ -51,6 +71,7 @@ create table if not exists items (
   name       text not null,
   category   item_category not null,
   size_fit   text,
+  gender     item_gender,
   condition  text,
   flaws      text,
   photos     text[] not null default '{}',
@@ -61,6 +82,7 @@ create table if not exists items (
 create table if not exists interests (
   id             uuid primary key default gen_random_uuid(),
   item_id        uuid not null references items(id) on delete cascade,
+  receiver_id    uuid references receivers(id) on delete set null,
   receiver_name  text not null,
   receiver_avatar text,
   position       int not null,
@@ -71,12 +93,17 @@ create table if not exists interests (
 );
 
 create table if not exists threads (
-  id             uuid primary key default gen_random_uuid(),
-  item_id        uuid not null references items(id) on delete cascade,
-  receiver_name  text not null,
+  id              uuid primary key default gen_random_uuid(),
+  item_id         uuid not null references items(id) on delete cascade,
+  receiver_id     uuid references receivers(id) on delete set null,
+  receiver_name   text not null,
   receiver_avatar text,
-  quick_replies  text[] not null default '{}',
-  created_at     timestamptz not null default now()
+  quick_replies   text[] not null default '{}',
+  pickup_address  text,
+  pickup_entrance text,
+  pickup_time     text,
+  pickup_state    pickup_status not null default 'none',
+  created_at      timestamptz not null default now()
 );
 
 create table if not exists messages (

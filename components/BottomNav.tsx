@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, MessageCircle, User } from "lucide-react";
+import { Home, Search, Inbox as InboxIcon, User } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 const tabs = [
   { href: "/", label: "Home", icon: Home },
   { href: "/search", label: "Search", icon: Search },
-  { href: "/messages", label: "Messages", icon: MessageCircle, badgeKey: "messages" as const },
+  { href: "/inbox", label: "Inbox", icon: InboxIcon, badge: true },
   { href: "/profile", label: "Profile", icon: User },
 ];
 
@@ -19,10 +19,9 @@ export function BottomNav() {
 
   return (
     <nav className="sticky bottom-0 z-20 mt-auto grid grid-cols-4 border-t border-border-subtle bg-surface-100/95 backdrop-blur">
-      {tabs.map(({ href, label, icon: Icon, badgeKey }) => {
-        const active =
-          href === "/" ? pathname === "/" : pathname.startsWith(href);
-        const showBadge = badgeKey === "messages" && unreadMessages > 0;
+      {tabs.map(({ href, label, icon: Icon, badge }) => {
+        const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+        const showBadge = badge && unreadMessages > 0;
         return (
           <Link
             key={href}
@@ -46,11 +45,7 @@ export function BottomNav() {
                 </span>
               )}
             </span>
-            <span
-              className={cn("text-tab", active ? "text-ink" : "text-ink-muted")}
-            >
-              {label}
-            </span>
+            <span className={cn("text-tab", active ? "text-ink" : "text-ink-muted")}>{label}</span>
           </Link>
         );
       })}

@@ -22,6 +22,19 @@ export function postedAgo(iso: string): string {
   return `Posted ${timeAgo(iso)}`;
 }
 
+/** Short countdown like "1d 8h" until the ISO deadline (empty if passed). */
+export function remaining(iso: string): string {
+  const ms = new Date(iso).getTime() - Date.now();
+  if (ms <= 0) return "";
+  const hrs = Math.floor(ms / 3_600_000);
+  const days = Math.floor(hrs / 24);
+  const h = hrs % 24;
+  if (days > 0) return `${days}d ${h}h`;
+  if (hrs > 0) return `${hrs}h`;
+  const mins = Math.max(1, Math.round(ms / 60_000));
+  return `${mins}m`;
+}
+
 export function clockTime(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, {
     hour: "numeric",

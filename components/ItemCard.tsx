@@ -1,46 +1,62 @@
 import Link from "next/link";
-import { MapPin } from "lucide-react";
+import { Clock, MapPin } from "lucide-react";
 import type { Item } from "@/lib/types";
 import { StatusBadge } from "@/components/StatusBadge";
-import { CATEGORY_LABEL } from "@/lib/utils";
+import { TimeAgo } from "@/components/TimeText";
 
 interface ItemCardProps {
   item: Item;
   distance?: string;
   href?: string;
-  showStatus?: boolean;
+  timeIso?: string;
 }
 
-/** Whole card is the tap target. */
-export function ItemCard({
-  item,
-  distance = "1.2 km away",
-  href,
-  showStatus = true,
-}: ItemCardProps) {
+/**
+ * Browse-result card (matches Figma): time + distance header, a two-photo
+ * gallery, title with status badge, then condition / size columns.
+ */
+export function ItemCard({ item, distance, href, timeIso }: ItemCardProps) {
+  const photos = item.photos.length >= 2 ? item.photos.slice(0, 2) : [item.photos[0], item.photos[0]];
+
   const content = (
-    <article className="flex gap-3 rounded-md border border-border-subtle bg-surface-200 p-3 shadow-sm transition-colors duration-150 hover:bg-surface-300/50">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={item.photos[0]}
-        alt={`${item.name} — ${CATEGORY_LABEL[item.category]}`}
-        className="size-20 shrink-0 rounded-md object-cover"
-      />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="text-heading-3 truncate text-ink">{item.name}</h3>
+    <article className="flex flex-col gap-2.5 rounded-md border border-border-subtle bg-surface-100 p-3 shadow-sm transition-colors duration-150 hover:bg-surface-200">
+      {(timeIso || distance) && (
+        <div className="flex items-center justify-between text-caption text-ink-subtle">
+          <span className="inline-flex items-center gap-1">
+            {timeIso && (
+              <>
+                <Clock size={12} aria-hidden /> <TimeAgo iso={timeIso} />
+              </>
+            )}
+          </span>
+          {distance && (
+            <span className="inline-flex items-center gap-1">
+              <MapPin size={12} aria-hidden /> {distance}
+            </span>
+          )}
         </div>
-        <p className="text-caption text-ink-muted mt-0.5">
-          {item.sizeFit} · {item.condition}
-        </p>
-        <p className="text-caption text-ink-subtle mt-0.5 inline-flex items-center gap-1">
-          <MapPin size={13} aria-hidden /> {distance}
-        </p>
-        {showStatus && (
-          <div className="mt-2">
-            <StatusBadge item={item} />
-          </div>
-        )}
+      )}
+
+      <div className="grid grid-cols-2 gap-2">
+        {photos.map((src, i) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={i}
+            src={src}
+            alt={`${item.name} photo ${i + 1}`}
+            className="aspect-[4/3] w-full rounded-md object-cover"
+          />
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-heading-3 truncate text-ink">{item.name}</h3>
+        <StatusBadge item={item} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <Meta label="Condition" value={item.condition} />
+        <Meta label="Size/Fit" value={item.sizeFit} />
       </div>
     </article>
   );
@@ -56,4 +72,13 @@ export function ItemCard({
     );
   }
   return content;
+}
+
+function Meta({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-caption text-ink-subtle">{label}</p>
+      <p className="text-body-medium text-ink truncate">{value}</p>
+    </div>
+  );
 }

@@ -34,6 +34,10 @@
   --error: 184 78 0;
   --warning: 190 139 19;
 
+  /* Clear green for "accepted" affirmations (paired with icon/label) */
+  --positive: 47 107 71;
+  --positive-subtle: 231 241 234;
+
   --shadow-sm: 0 1px 2px rgba(41, 37, 28, 0.06), 0 1px 3px rgba(41, 37, 28, 0.05);
   --shadow-md: 0 4px 14px rgba(41, 37, 28, 0.09);
   --shadow-lg: 0 16px 40px rgba(41, 37, 28, 0.18);
@@ -63,6 +67,9 @@
   --success: 111 102 81;
   --error: 184 78 0;
   --warning: 190 139 19;
+
+  --positive: 126 196 157;
+  --positive-subtle: 32 54 42;
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.4);
