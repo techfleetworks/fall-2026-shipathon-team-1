@@ -46,16 +46,16 @@ export default function ProfilePage() {
           </section>
 
           <div className="flex flex-col gap-2">
-            <Link href="/post">
-              <div className="flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-3 text-ink-on-brand">
-                <HandHeart size={18} aria-hidden />
-                <span className="text-button">Give something away</span>
-              </div>
-            </Link>
             <Link href="/search">
               <div className="flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-3 text-ink">
                 <SearchIcon size={18} aria-hidden />
                 <span className="text-button">Search for items</span>
+              </div>
+            </Link>
+            <Link href="/post">
+              <div className="flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-3 text-ink-on-brand">
+                <HandHeart size={18} aria-hidden />
+                <span className="text-button">Give something away</span>
               </div>
             </Link>
           </div>

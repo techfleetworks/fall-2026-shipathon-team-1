@@ -7,6 +7,7 @@ const config: Config = {
     extend: {
       colors: {
         surface: {
+          pure: "rgb(var(--surface-pure) / <alpha-value>)",
           100: "rgb(var(--surface-100) / <alpha-value>)",
           200: "rgb(var(--surface-200) / <alpha-value>)",
           300: "rgb(var(--surface-300) / <alpha-value>)",

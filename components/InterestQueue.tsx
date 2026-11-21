@@ -120,14 +120,14 @@ function QueueRow({
 
       {isActive && (
         <div className="flex gap-2 pl-12">
-          <Button fullWidth onClick={onAccept}>Accept</Button>
           <Button variant="secondary" fullWidth onClick={onDecline}>Decline</Button>
+          <Button fullWidth onClick={onAccept}>Accept</Button>
         </div>
       )}
       {isAccepted && (
         <div className="flex gap-2 pl-12">
-          <Button fullWidth onClick={onStartChat}>Start chat</Button>
           <Button variant="secondary" fullWidth onClick={onUndo}>Undo</Button>
+          <Button fullWidth onClick={onStartChat}>Start chat</Button>
         </div>
       )}
     </li>

@@ -61,6 +61,7 @@ interface StoreValue extends StoreState {
   browseItems: Item[];
   searchResults: Item[];
   myReceivedItems: Item[];
+  myPostedBundles: Bundle[];
   mySentRequests: SentRequest[];
   getMyInterest: (itemId: string) => Interest | undefined;
   myThreads: Thread[];
@@ -212,14 +213,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
   }, [browseItems, state.search, getPosterOf, getBundleOf]);
 
+  const myPostedBundles = useMemo(
+    () => state.bundles.filter((b) => b.giverId === me.id),
+    [state.bundles, me.id],
+  );
+
   // My give-aways that have interest (Received).
   const myReceivedItems = useMemo(
     () =>
-      state.bundles
-        .filter((b) => b.giverId === me.id)
+      myPostedBundles
         .flatMap((b) => b.items)
         .filter((i) => i.interests.length > 0),
-    [state.bundles, me.id],
+    [myPostedBundles],
   );
 
   // Items I've requested (Sent).
@@ -597,6 +602,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     browseItems,
     searchResults,
     myReceivedItems,
+    myPostedBundles,
     mySentRequests,
     getMyInterest,
     myThreads,

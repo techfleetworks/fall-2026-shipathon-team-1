@@ -118,8 +118,8 @@ function SentCard({ req, onBrowse }: { req: SentRequest; onBrowse: () => void })
     tag = <Tag tone="green">Accepted request</Tag>;
     actions = (
       <div className="flex gap-2">
-        <Button fullWidth onClick={() => thread && router.push(`/inbox/${thread.id}`)}>Start a chat</Button>
         <Button variant="secondary" fullWidth onClick={() => withdrawInterest(item.id)}>Withdraw request</Button>
+        <Button fullWidth onClick={() => thread && router.push(`/inbox/${thread.id}`)}>Start a chat</Button>
       </div>
     );
   } else if (interest.state === "active" || interest.state === "waiting") {
@@ -137,7 +137,7 @@ function SentCard({ req, onBrowse }: { req: SentRequest; onBrowse: () => void })
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-md border border-border-subtle bg-surface-100 p-3 shadow-sm">
+    <div className="flex flex-col gap-3 rounded-md border border-border-subtle bg-surface-pure p-3">
       <div className="flex items-start gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={item.photos[0]} alt={item.name} className="size-12 shrink-0 rounded-md object-cover" />
@@ -180,7 +180,7 @@ function ReceivedList() {
           );
         }
         return (
-          <section key={item.id} className="flex flex-col gap-3 rounded-md border border-border-subtle bg-surface-100 p-3 shadow-sm">
+          <section key={item.id} className="flex flex-col gap-3 rounded-md border border-border-subtle bg-surface-pure p-3">
             <div className="flex items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={item.photos[0]} alt={item.name} className="size-12 shrink-0 rounded-md object-cover" />
