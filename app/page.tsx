@@ -42,7 +42,7 @@ export default function HomePage() {
             {activePostItems.map(({ item, bundle }) => (
               <Link
                 key={item.id}
-                href="/inbox"
+                href="/inbox?tab=received"
                 className="flex w-[300px] shrink-0 items-center gap-3 rounded-md border border-border-subtle bg-surface-pure p-4 shadow-sm hover:bg-surface-200 transition-colors"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Inbox as InboxIcon, MessageSquare } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Inbox as InboxIcon, MessageSquare, MoreHorizontal } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/Button";
@@ -17,57 +17,71 @@ import { cn, remaining } from "@/lib/utils";
 type Tab = "requests" | "messages";
 
 export default function InboxPage() {
+  const searchParams = useSearchParams();
+  const paramTab = searchParams.get("tab");
+
   const [tab, setTab] = useState<Tab>("requests");
+  const [initialSide] = useState<"sent" | "received">(paramTab === "received" ? "received" : "sent");
+  const [side, setSide] = useState<"sent" | "received">(initialSide);
 
   return (
     <>
       <TopBar />
-      <main className="flex-1 overflow-y-auto pb-24">
-        <h1 className="text-heading-1 text-ink px-4 pt-2">Inbox</h1>
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="shrink-0 px-4 pt-2">
+          <h1 className="text-heading-1 text-ink">Inbox</h1>
 
-        {/* Top tabs */}
-        <div className="mt-2 flex gap-6 border-b border-border-subtle px-4" role="tablist">
-          {(["requests", "messages"] as Tab[]).map((t) => (
-            <button
-              key={t}
-              role="tab"
-              aria-selected={tab === t}
-              onClick={() => setTab(t)}
-              className={cn(
-                "text-body-medium -mb-px border-b-2 pb-2 capitalize transition-colors",
-                tab === t ? "border-brand text-ink" : "border-transparent text-ink-muted",
-              )}
-            >
-              {t}
-            </button>
-          ))}
+          {/* Top tabs */}
+          <div className="mt-2 flex gap-6 border-b border-border-subtle" role="tablist">
+            {(["requests", "messages"] as Tab[]).map((t) => (
+              <button
+                key={t}
+                role="tab"
+                aria-selected={tab === t}
+                onClick={() => setTab(t)}
+                className={cn(
+                  "text-body-medium -mb-px border-b-2 pb-2 capitalize transition-colors",
+                  tab === t ? "border-brand text-ink" : "border-transparent text-ink-muted",
+                )}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="px-4 pt-4">
-          {tab === "requests" ? <RequestsTab /> : <MessagesTab />}
-        </div>
-      </main>
+        {tab === "requests" && <RequestsToggle initialSide={initialSide} onSideChange={setSide} />}
+        <main className="flex-1 overflow-y-auto px-4 pb-24 pt-3">
+          {tab === "requests" ? <RequestsList side={side} /> : <MessagesTab />}
+        </main>
+      </div>
       <BottomNav />
     </>
   );
 }
 
 // -------------------- Requests (Sent / Received) --------------------
-function RequestsTab() {
+function RequestsToggle({ initialSide, onSideChange }: { initialSide: "sent" | "received"; onSideChange: (s: "sent" | "received") => void }) {
   const { mySentRequests, myReceivedItems } = useStore();
-  const [side, setSide] = useState<"sent" | "received">("sent");
+  const [side, setSide] = useState<"sent" | "received">(initialSide);
+
+  const change = (s: "sent" | "received") => { setSide(s); onSideChange(s); };
 
   return (
-    <>
+    <div className="shrink-0 border-b border-border-subtle px-4 pb-3 pt-3">
       <div className="flex gap-1 rounded-md border border-border-subtle bg-surface-200 p-1">
-        <SideButton active={side === "sent"} onClick={() => setSide("sent")} label={`Sent (${mySentRequests.length})`} />
-        <SideButton active={side === "received"} onClick={() => setSide("received")} label={`Received (${myReceivedItems.length})`} />
+        <SideButton active={side === "sent"} onClick={() => change("sent")} label={`Sent (${mySentRequests.length})`} />
+        <SideButton active={side === "received"} onClick={() => change("received")} label={`Received (${myReceivedItems.length})`} />
       </div>
+    </div>
+  );
+}
 
-      <div className="mt-4 flex flex-col gap-4">
-        {side === "sent" ? <SentList /> : <ReceivedList />}
-      </div>
-    </>
+function RequestsList({ side }: { side: "sent" | "received" }) {
+  return (
+    <div className="flex flex-col gap-4">
+      {side === "sent" ? <SentList /> : <ReceivedList />}
+    </div>
   );
 }
 
@@ -110,6 +124,19 @@ function SentCard({ req, onBrowse }: { req: SentRequest; onBrowse: () => void })
   const { getThreadByItem, withdrawInterest } = useStore();
   const thread = getThreadByItem(item.id);
   const rem = interest.expiresAt ? remaining(interest.expiresAt) : "";
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [menuOpen]);
+
+  const canWithdraw = interest.state === "accepted" || interest.state === "active" || interest.state === "waiting";
 
   let tag = <Tag tone="gray">—</Tag>;
   let actions: React.ReactNode = null;
@@ -117,16 +144,10 @@ function SentCard({ req, onBrowse }: { req: SentRequest; onBrowse: () => void })
   if (interest.state === "accepted") {
     tag = <Tag tone="green">Accepted request</Tag>;
     actions = (
-      <div className="flex gap-2">
-        <Button variant="secondary" fullWidth onClick={() => withdrawInterest(item.id)}>Withdraw request</Button>
-        <Button fullWidth onClick={() => thread && router.push(`/inbox/${thread.id}`)}>Start a chat</Button>
-      </div>
+      <Button fullWidth onClick={() => thread && router.push(`/inbox/${thread.id}`)}>Start a chat</Button>
     );
   } else if (interest.state === "active" || interest.state === "waiting") {
-    tag = <Tag tone="amber">Waiting · {rem ? `${rem} left` : "in queue"}</Tag>;
-    actions = (
-      <Button variant="secondary" fullWidth onClick={() => withdrawInterest(item.id)}>Withdraw request</Button>
-    );
+    tag = <Tag tone="gray">Waiting · {rem ? `${rem} left` : "in queue"}</Tag>;
   } else if (interest.state === "declined" || item.status === "gone") {
     tag = <Tag tone="gray">This bundle found a home</Tag>;
     actions = (
@@ -142,8 +163,35 @@ function SentCard({ req, onBrowse }: { req: SentRequest; onBrowse: () => void })
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={item.photos[0]} alt={item.name} className="size-12 shrink-0 rounded-md object-cover" />
         <div className="min-w-0 flex-1">
-          <p className="text-body-medium text-ink">{item.name} · {item.sizeFit}</p>
-          <div className="mt-1">{tag}</div>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <p className="text-body-medium text-ink truncate">{item.name}</p>
+              <div className="shrink-0">{tag}</div>
+            </div>
+            {canWithdraw && (
+              <div className="relative shrink-0" ref={menuRef}>
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen((v) => !v)}
+                  aria-label="More actions"
+                  className="flex size-7 items-center justify-center rounded-full text-ink-muted hover:bg-surface-200"
+                >
+                  <MoreHorizontal size={18} aria-hidden />
+                </button>
+                {menuOpen && (
+                  <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded-md border border-border bg-surface-100 py-1 shadow-lg">
+                    <button
+                      type="button"
+                      className="w-full px-3 py-2 text-left text-body text-ink hover:bg-surface-200"
+                      onClick={() => { withdrawInterest(item.id); setMenuOpen(false); }}
+                    >
+                      Withdraw request
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           <p className="text-caption text-ink-subtle mt-1">From {poster.name}</p>
         </div>
       </div>
@@ -180,18 +228,21 @@ function ReceivedList() {
           );
         }
         return (
-          <section key={item.id} className="flex flex-col gap-3 rounded-md border border-border-subtle bg-surface-pure p-3">
+          <section key={item.id} className="flex flex-col rounded-md border border-border-subtle bg-surface-pure p-3">
             <div className="flex items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={item.photos[0]} alt={item.name} className="size-12 shrink-0 rounded-md object-cover" />
               <div className="min-w-0 flex-1">
-                <p className="text-body-medium text-ink">{item.name} · {item.sizeFit}</p>
-                <p className="text-caption text-ink-subtle">{bundle ? <PostedAgo iso={bundle.createdAt} /> : ""}</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-body-medium text-ink truncate">{item.name}</p>
+                  <span className="text-caption text-ink-subtle shrink-0">{bundle ? <PostedAgo iso={bundle.createdAt} /> : ""}</span>
+                </div>
                 {item.status !== "accepted" && (
                   <p className="text-caption text-ink-muted mt-0.5">{interested} people interested</p>
                 )}
               </div>
             </div>
+            <div className="my-3 border-t border-border-subtle" />
             <InterestQueue item={item} />
           </section>
         );

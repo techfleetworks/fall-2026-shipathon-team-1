@@ -11,11 +11,6 @@ import { TimeAgo } from "@/components/TimeText";
 import { useStore } from "@/lib/store";
 import { remaining } from "@/lib/utils";
 
-/**
- * The ordered, one-at-a-time interest queue (giver's Received view).
- * Only the current #1 can be accepted/declined; accepting opens a chat
- * and wait-lists the rest; declining promotes the next person.
- */
 export function InterestQueue({ item }: { item: Item }) {
   const router = useRouter();
   const { acceptTop, declineTop, undoAccept, getThreadByItem } = useStore();
@@ -25,6 +20,9 @@ export function InterestQueue({ item }: { item: Item }) {
   const queue = item.interests
     .filter((i) => ["active", "waiting", "accepted"].includes(i.state))
     .sort((a, b) => a.position - b.position);
+
+  const defaultExpanded = queue[0]?.id ?? null;
+  const [expandedId, setExpandedId] = useState<string | null>(defaultExpanded);
 
   const openChat = () => {
     const id = getThreadByItem(item.id)?.id;
@@ -58,6 +56,8 @@ export function InterestQueue({ item }: { item: Item }) {
             key={interest.id}
             interest={interest}
             itemAccepted={Boolean(accepted)}
+            expanded={expandedId === interest.id}
+            onToggle={() => setExpandedId(expandedId === interest.id ? null : interest.id)}
             onAccept={() => acceptTop(item.id)}
             onDecline={() => declineTop(item.id)}
             onUndo={() => undoAccept(item.id)}
@@ -72,6 +72,8 @@ export function InterestQueue({ item }: { item: Item }) {
 function QueueRow({
   interest,
   itemAccepted,
+  expanded,
+  onToggle,
   onAccept,
   onDecline,
   onUndo,
@@ -79,52 +81,55 @@ function QueueRow({
 }: {
   interest: Interest;
   itemAccepted: boolean;
+  expanded: boolean;
+  onToggle: () => void;
   onAccept: () => void;
   onDecline: () => void;
   onUndo: () => void;
   onStartChat: () => void;
 }) {
-  const isActive = interest.state === "active";
   const isAccepted = interest.state === "accepted";
+  const isQueued = interest.state === "active" || interest.state === "waiting";
   const rem = interest.expiresAt ? remaining(interest.expiresAt) : "";
+  const showActions = expanded && (isQueued || isAccepted);
 
   return (
     <li className="flex flex-col gap-2 py-3 first:pt-0">
-      <div className="flex items-start gap-3">
+      <div
+        className="flex cursor-pointer items-start gap-3"
+        role="button"
+        tabIndex={0}
+        onClick={onToggle}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onToggle(); }}
+      >
         <Avatar src={interest.receiver.avatar} name={interest.receiver.name} size={36} />
         <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
             <p className="text-body-medium text-ink">{interest.receiver.name}</p>
             <span className="text-caption text-ink-subtle shrink-0">
-              {interest.position === 1 && !itemAccepted ? "#1 request" : `#${interest.position}`}
+              #{interest.position}
             </span>
-          </div>
-          <div className="mt-1 flex flex-wrap items-center gap-1.5">
             {isAccepted ? (
               <Tag tone="green" icon={<CheckCircle2 size={12} aria-hidden />}>Accepted</Tag>
             ) : itemAccepted ? (
               <Tag tone="gray">Wait-listed</Tag>
             ) : rem ? (
-              <Tag tone="amber" icon={<Clock size={11} aria-hidden />}>{rem} remaining</Tag>
-            ) : (
-              <span className="text-caption text-ink-subtle">
-                <TimeAgo iso={interest.createdAt} />
-              </span>
-            )}
+              <Tag tone="gray" icon={<Clock size={11} aria-hidden />}>{rem} remaining</Tag>
+            ) : null}
           </div>
-          {isActive && interest.note && (
+          {expanded && isQueued && interest.note && (
             <p className="text-body text-ink-muted mt-1.5">&ldquo;{interest.note}&rdquo;</p>
           )}
         </div>
       </div>
 
-      {isActive && (
+      {showActions && isQueued && (
         <div className="flex gap-2 pl-12">
           <Button variant="secondary" fullWidth onClick={onDecline}>Decline</Button>
           <Button fullWidth onClick={onAccept}>Accept</Button>
         </div>
       )}
-      {isAccepted && (
+      {showActions && isAccepted && (
         <div className="flex gap-2 pl-12">
           <Button variant="secondary" fullWidth onClick={onUndo}>Undo</Button>
           <Button fullWidth onClick={onStartChat}>Start chat</Button>
