@@ -16,10 +16,8 @@ interface ItemCardProps {
  * gallery, title with status badge, then condition / size columns.
  */
 export function ItemCard({ item, distance, href, timeIso }: ItemCardProps) {
-  const photos = item.photos.length >= 2 ? item.photos.slice(0, 2) : [item.photos[0], item.photos[0]];
-
   const content = (
-    <article className="flex flex-col gap-2.5 rounded-md border border-border-subtle bg-surface-100 p-3 shadow-sm transition-colors duration-150 hover:bg-surface-200">
+    <article className="flex flex-col gap-2.5 rounded-md border border-border-subtle bg-surface-pure p-3 shadow-sm transition-colors duration-150 hover:bg-surface-200">
       {(timeIso || distance) && (
         <div className="flex items-center justify-between text-caption text-ink-subtle">
           <span className="inline-flex items-center gap-1">
@@ -37,17 +35,12 @@ export function ItemCard({ item, distance, href, timeIso }: ItemCardProps) {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-2">
-        {photos.map((src, i) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            key={i}
-            src={src}
-            alt={`${item.name} photo ${i + 1}`}
-            className="aspect-[4/3] w-full rounded-md object-cover"
-          />
-        ))}
-      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={item.photos[0]}
+        alt={item.name}
+        className="aspect-[4/3] w-full rounded-md object-cover"
+      />
 
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-heading-3 truncate text-ink">{item.name}</h3>

@@ -232,10 +232,10 @@ export default function PostPage() {
             </ol>
           </div>
         </main>
-        <div className="sticky bottom-0 flex items-center gap-3 border-t border-border-subtle bg-surface-100/95 p-4 backdrop-blur">
+        <div className="sticky bottom-0 grid grid-cols-2 gap-3 border-t border-border-subtle bg-surface-100/95 p-4 backdrop-blur">
           {step === "intro" ? (
             <>
-              <button type="button" onClick={() => router.push("/")} className="text-button text-ink-muted px-2">Cancel</button>
+              <Button variant="secondary" fullWidth onClick={() => router.push("/")}>Cancel</Button>
               <Button fullWidth onClick={() => setStep("source")} leftIcon={<Camera size={18} aria-hidden />}>Add Photo to start</Button>
             </>
           ) : (
@@ -338,26 +338,20 @@ export default function PostPage() {
         </main>
 
         {/* Footer */}
-        <div className="sticky bottom-0 flex items-center gap-3 border-t border-border-subtle bg-surface-100/95 p-4 backdrop-blur">
+        <div className="sticky bottom-0 grid grid-cols-2 gap-3 border-t border-border-subtle bg-surface-100/95 p-4 backdrop-blur">
         {addingCategory ? (
           <>
-            <button type="button" onClick={() => setAddingCategory(false)} className="text-button text-ink-muted px-2">Back</button>
-            <Button variant="secondary" fullWidth onClick={() => setAddingCategory(false)}>Done</Button>
+            <Button variant="secondary" fullWidth onClick={() => setAddingCategory(false)}>Back</Button>
+            <Button fullWidth onClick={() => setAddingCategory(false)}>Done</Button>
           </>
         ) : !onDetails ? (
           <>
-            <button type="button" onClick={() => setStep("intro")} className="text-button text-ink-muted px-2">Back</button>
+            <Button variant="secondary" fullWidth onClick={() => setStep("intro")}>Back</Button>
             <Button fullWidth disabled={drafts.length === 0} onClick={() => { setDetailIdx(0); setStep("details"); }}>Confirm</Button>
           </>
         ) : (
           <>
-            <button
-              type="button"
-              onClick={() => setStep("categories")}
-              className="text-button text-ink-muted px-2"
-            >
-              Back
-            </button>
+            <Button variant="secondary" fullWidth onClick={() => setStep("categories")}>Back</Button>
             <Button
               fullWidth
               disabled={drafts.some((d) => !d.condition || !d.sizeFit)}
@@ -697,8 +691,8 @@ function AddressSheet({
           </div>
         </div>
       </main>
-      <div className="sticky bottom-0 flex items-center gap-3 border-t border-border-subtle bg-surface-100/95 p-4 backdrop-blur">
-        <button type="button" onClick={onBack} className="text-button text-ink-muted px-2">Back</button>
+      <div className="sticky bottom-0 grid grid-cols-2 gap-3 border-t border-border-subtle bg-surface-100/95 p-4 backdrop-blur">
+        <Button variant="secondary" fullWidth onClick={onBack}>Back</Button>
         <Button fullWidth disabled={!value.trim()} onClick={onPublish}>Confirm &amp; Publish</Button>
       </div>
     </div>
