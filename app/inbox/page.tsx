@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Inbox as InboxIcon, MessageSquare, MoreHorizontal } from "lucide-react";
@@ -17,6 +17,14 @@ import { cn, remaining } from "@/lib/utils";
 type Tab = "requests" | "messages";
 
 export default function InboxPage() {
+  return (
+    <Suspense>
+      <InboxContent />
+    </Suspense>
+  );
+}
+
+function InboxContent() {
   const searchParams = useSearchParams();
   const paramTab = searchParams.get("tab");
 
