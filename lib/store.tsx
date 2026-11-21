@@ -36,6 +36,7 @@ interface StoreState {
   threads: Thread[];
   notifications: AppNotification[];
   search: SearchQuery;
+  notificationsEnabled: boolean;
 }
 
 /** An item the current user requested, with its poster. */
@@ -61,6 +62,7 @@ interface StoreValue extends StoreState {
   browseItems: Item[];
   searchResults: Item[];
   myReceivedItems: Item[];
+  myPostedBundles: Bundle[];
   mySentRequests: SentRequest[];
   getMyInterest: (itemId: string) => Interest | undefined;
   myThreads: Thread[];
@@ -85,6 +87,8 @@ interface StoreValue extends StoreState {
   markArranged: (threadId: string) => void;
   markPickupComplete: (threadId: string) => void;
   markNotificationsRead: () => void;
+  notificationsEnabled: boolean;
+  enableNotifications: () => void;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -108,26 +112,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const me = seedMe;
   const posters = seedPosters;
 
-  const [state, setState] = useState<StoreState>({
+  const defaultState: StoreState = {
     bundles: seedBundles,
     threads: seedThreads,
     notifications: seedNotifications,
     search: EMPTY_SEARCH,
-  });
-  const hydrated = useRef(false);
+    notificationsEnabled: false,
+  };
 
-  useEffect(() => {
+  const [state, setState] = useState<StoreState>(() => {
+    if (typeof window === "undefined") return defaultState;
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const saved = JSON.parse(raw) as Partial<StoreState>;
-        setState((s) => ({ ...s, ...saved, search: saved.search ?? EMPTY_SEARCH }));
+        return { ...defaultState, ...saved, search: saved.search ?? EMPTY_SEARCH };
       }
-    } catch {
-      /* ignore */
-    }
-    hydrated.current = true;
-  }, []);
+    } catch { /* ignore */ }
+    return defaultState;
+  });
+  const hydrated = useRef(true);
 
   useEffect(() => {
     if (!hydrated.current) return;
@@ -212,14 +216,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
   }, [browseItems, state.search, getPosterOf, getBundleOf]);
 
+  const myPostedBundles = useMemo(
+    () => state.bundles.filter((b) => b.giverId === me.id),
+    [state.bundles, me.id],
+  );
+
   // My give-aways that have interest (Received).
   const myReceivedItems = useMemo(
     () =>
-      state.bundles
-        .filter((b) => b.giverId === me.id)
+      myPostedBundles
         .flatMap((b) => b.items)
         .filter((i) => i.interests.length > 0),
-    [state.bundles, me.id],
+    [myPostedBundles],
   );
 
   // Items I've requested (Sent).
@@ -581,6 +589,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setState((s) => ({ ...s, notifications: s.notifications.map((n) => ({ ...n, read: true })) }));
   }, []);
 
+  const enableNotifications = useCallback(() => {
+    setState((s) => ({ ...s, notificationsEnabled: true }));
+  }, []);
+
   const value: StoreValue = {
     ...state,
     me,
@@ -597,6 +609,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     browseItems,
     searchResults,
     myReceivedItems,
+    myPostedBundles,
     mySentRequests,
     getMyInterest,
     myThreads,
@@ -617,6 +630,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     markArranged,
     markPickupComplete,
     markNotificationsRead,
+    notificationsEnabled: state.notificationsEnabled,
+    enableNotifications,
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

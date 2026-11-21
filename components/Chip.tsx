@@ -32,7 +32,7 @@ export function Chip({
           ? "border border-dashed border-border-strong bg-surface-100 text-ink hover:bg-surface-200"
           : selected
             ? "border border-brand bg-brand-subtle text-ink"
-            : "border border-border bg-surface-100 text-ink hover:bg-surface-200",
+            : "border border-border bg-surface-100 text-ink-muted hover:bg-surface-200",
         className,
       )}
     >

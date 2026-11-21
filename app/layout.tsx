@@ -46,7 +46,7 @@ export default function RootLayout({
       <body className="bg-surface-100 text-ink">
         {/* Mobile-first: single column, centered on a neutral backdrop on larger screens. */}
         <div className="min-h-screen w-full bg-surface-300/40">
-          <div className="relative mx-auto flex min-h-screen w-full max-w-content flex-col bg-surface-100 shadow-md">
+          <div className="relative mx-auto flex h-screen w-full max-w-content flex-col bg-surface-100 shadow-md">
             <Providers>{children}</Providers>
           </div>
         </div>
