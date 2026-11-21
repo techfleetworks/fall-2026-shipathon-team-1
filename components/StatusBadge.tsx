@@ -7,7 +7,7 @@ import { queueOf } from "@/lib/store";
  * Item status is the single source of truth, always paired with an
  * icon + label. Mirrors the Figma badges on cards and item detail.
  */
-export function StatusBadge({ item, className }: { item: Item; className?: string }) {
+export function StatusBadge({ item, userJoined, className }: { item: Item; userJoined?: boolean; className?: string }) {
   const waiting = queueOf(item).length;
 
   if (item.status === "gone") {
@@ -20,14 +20,19 @@ export function StatusBadge({ item, className }: { item: Item; className?: strin
   if (item.status === "accepted") {
     return (
       <Tag tone="green" icon={<CheckCircle2 size={13} aria-hidden />} className={className}>
-        Accepted
+        {userJoined ? "Your interest accepted" : "Accepted"}
       </Tag>
     );
   }
   if (waiting > 0) {
+    const others = userJoined ? waiting - 1 : waiting;
     return (
       <Tag tone="outline" icon={<Users size={13} aria-hidden />} className={className}>
-        {waiting} {waiting === 1 ? "person" : "people"} interested
+        {userJoined
+          ? others > 0
+            ? `You + ${others} more interested`
+            : "You are interested"
+          : `${waiting} ${waiting === 1 ? "person" : "people"} interested`}
       </Tag>
     );
   }

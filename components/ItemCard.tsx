@@ -9,13 +9,14 @@ interface ItemCardProps {
   distance?: string;
   href?: string;
   timeIso?: string;
+  userJoined?: boolean;
 }
 
 /**
  * Browse-result card (matches Figma): time + distance header, a two-photo
  * gallery, title with status badge, then condition / size columns.
  */
-export function ItemCard({ item, distance, href, timeIso }: ItemCardProps) {
+export function ItemCard({ item, distance, href, timeIso, userJoined }: ItemCardProps) {
   const content = (
     <article className="flex flex-col gap-2.5 rounded-md border border-border-subtle bg-surface-pure p-3 shadow-sm transition-colors duration-150 hover:bg-surface-200">
       {(timeIso || distance) && (
@@ -44,7 +45,7 @@ export function ItemCard({ item, distance, href, timeIso }: ItemCardProps) {
 
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-heading-3 truncate text-ink">{item.name}</h3>
-        <StatusBadge item={item} />
+        <StatusBadge item={item} userJoined={userJoined} />
       </div>
 
       <div className="grid grid-cols-2 gap-2">

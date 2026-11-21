@@ -147,7 +147,8 @@ function SentCard({ req, onBrowse }: { req: SentRequest; onBrowse: () => void })
       <Button fullWidth onClick={() => thread && router.push(`/inbox/${thread.id}`)}>Start a chat</Button>
     );
   } else if (interest.state === "active" || interest.state === "waiting") {
-    tag = <Tag tone="gray">Waiting · {rem ? `${rem} left` : "in queue"}</Tag>;
+    const others = queueOf(item).filter((i) => i.receiver.id !== interest.receiver.id);
+    tag = <Tag tone="gray">{others.length > 0 ? "Waiting in queue" : "Waiting"}{rem ? ` · ${rem} left` : ""}</Tag>;
   } else if (interest.state === "declined" || item.status === "gone") {
     tag = <Tag tone="gray">This bundle found a home</Tag>;
     actions = (
@@ -159,7 +160,7 @@ function SentCard({ req, onBrowse }: { req: SentRequest; onBrowse: () => void })
 
   return (
     <div className="flex flex-col gap-3 rounded-md border border-border-subtle bg-surface-pure p-3">
-      <div className="flex items-start gap-3">
+      <Link href={`/item/${item.id}`} className="flex items-start gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={item.photos[0]} alt={item.name} className="size-12 shrink-0 rounded-md object-cover" />
         <div className="min-w-0 flex-1">
@@ -169,10 +170,10 @@ function SentCard({ req, onBrowse }: { req: SentRequest; onBrowse: () => void })
               <div className="shrink-0">{tag}</div>
             </div>
             {canWithdraw && (
-              <div className="relative shrink-0" ref={menuRef}>
+              <div className="relative shrink-0" ref={menuRef} onClick={(e) => e.preventDefault()}>
                 <button
                   type="button"
-                  onClick={() => setMenuOpen((v) => !v)}
+                  onClick={(e) => { e.preventDefault(); setMenuOpen((v) => !v); }}
                   aria-label="More actions"
                   className="flex size-7 items-center justify-center rounded-full text-ink-muted hover:bg-surface-200"
                 >
@@ -183,7 +184,7 @@ function SentCard({ req, onBrowse }: { req: SentRequest; onBrowse: () => void })
                     <button
                       type="button"
                       className="w-full px-3 py-2 text-left text-body text-ink hover:bg-surface-200"
-                      onClick={() => { withdrawInterest(item.id); setMenuOpen(false); }}
+                      onClick={(e) => { e.preventDefault(); withdrawInterest(item.id); setMenuOpen(false); }}
                     >
                       Withdraw request
                     </button>
@@ -194,7 +195,7 @@ function SentCard({ req, onBrowse }: { req: SentRequest; onBrowse: () => void })
           </div>
           <p className="text-caption text-ink-subtle mt-1">From {poster.name}</p>
         </div>
-      </div>
+      </Link>
       {actions}
     </div>
   );
@@ -216,7 +217,7 @@ function ReceivedList() {
           const given = item.interests.filter((i) => i.state === "accepted").length;
           const declined = item.interests.filter((i) => i.state === "declined").length;
           return (
-            <div key={item.id} className="flex items-center gap-3 rounded-md border border-border-subtle bg-surface-200/60 p-3">
+            <Link key={item.id} href={`/item/${item.id}`} className="flex items-center gap-3 rounded-md border border-border-subtle bg-surface-200/60 p-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={item.photos[0]} alt={item.name} className="size-12 shrink-0 rounded-md object-cover opacity-70" />
               <div className="min-w-0 flex-1">
@@ -224,12 +225,12 @@ function ReceivedList() {
                 <p className="text-caption text-ink-subtle">{bundle ? <PostedAgo iso={bundle.createdAt} /> : ""}</p>
               </div>
               <span className="text-caption text-ink-subtle">{given} Given · {declined} Declined</span>
-            </div>
+            </Link>
           );
         }
         return (
           <section key={item.id} className="flex flex-col rounded-md border border-border-subtle bg-surface-pure p-3">
-            <div className="flex items-center gap-3">
+            <Link href={`/item/${item.id}`} className="flex items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={item.photos[0]} alt={item.name} className="size-12 shrink-0 rounded-md object-cover" />
               <div className="min-w-0 flex-1">
@@ -241,7 +242,7 @@ function ReceivedList() {
                   <p className="text-caption text-ink-muted mt-0.5">{interested} people interested</p>
                 )}
               </div>
-            </div>
+            </Link>
             <div className="my-3 border-t border-border-subtle" />
             <InterestQueue item={item} />
           </section>

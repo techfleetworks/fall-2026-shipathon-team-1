@@ -49,7 +49,7 @@ const LOCATION_OPTIONS = [
 
 export default function BrowsePage() {
   const router = useRouter();
-  const { search, setSearch, searchResults, getBundleOf, getPosterOf } = useStore();
+  const { search, setSearch, searchResults, getBundleOf, getPosterOf, getMyInterest } = useStore();
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const results = useMemo(() => {
@@ -135,6 +135,7 @@ export default function BrowsePage() {
                   href={`/item/${item.id}`}
                   distance={`${poster?.distanceMi ?? "?"} miles away`}
                   timeIso={bundle?.createdAt}
+                  userJoined={!!getMyInterest(item.id)}
                 />
               );
             })}
