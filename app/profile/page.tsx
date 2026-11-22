@@ -6,9 +6,18 @@ import { BottomNav } from "@/components/BottomNav";
 import { Avatar } from "@/components/Avatar";
 import { useStore } from "@/lib/store";
 import { useTheme } from "@/lib/theme";
+import { cn } from "@/lib/utils";
+import type { Scenario } from "@/lib/data/seed";
+
+const SCENARIOS: { key: Scenario; label: string; desc: string }[] = [
+  { key: "giver-new", label: "First-time Giver", desc: "John — empty inbox, ready to post" },
+  { key: "receiver-new", label: "First-time Receiver", desc: "Sam — empty inbox, ready to search" },
+  { key: "giver-queue", label: "Giver with queue", desc: "John — has posts, people interested" },
+  { key: "receiver-chat", label: "Receiver chatting", desc: "Sam — accepted request, ready to chat" },
+];
 
 export default function ProfilePage() {
-  const { me, bundles, mySentRequests } = useStore();
+  const { me, bundles, mySentRequests, scenario, switchScenario } = useStore();
   const { theme, setTheme } = useTheme();
 
   const myItems = bundles.filter((b) => b.giverId === me.id).flatMap((b) => b.items);
@@ -42,6 +51,30 @@ export default function ProfilePage() {
             <Stat value={requests} label="Requests" />
             <Stat value={rehomed} label="Rehomed" />
           </div>
+
+          <section className="flex flex-col gap-2">
+            <h2 className="text-heading-3 text-ink">Demo scenario</h2>
+            <div className="flex flex-col gap-2">
+              {SCENARIOS.map((s) => (
+                <button
+                  key={s.key}
+                  type="button"
+                  onClick={() => switchScenario(s.key)}
+                  className={cn(
+                    "flex flex-col rounded-lg border px-4 py-3 text-left transition-colors",
+                    scenario === s.key
+                      ? "border-brand bg-brand-subtle"
+                      : "border-border-subtle bg-surface-pure hover:bg-surface-200",
+                  )}
+                >
+                  <span className={cn("text-label", scenario === s.key ? "text-ink" : "text-ink")}>
+                    {s.label}
+                  </span>
+                  <span className="text-caption text-ink-muted">{s.desc}</span>
+                </button>
+              ))}
+            </div>
+          </section>
         </div>
       </main>
       <BottomNav />
