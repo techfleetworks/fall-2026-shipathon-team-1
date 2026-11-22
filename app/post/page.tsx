@@ -132,6 +132,8 @@ export default function PostPage() {
   const [detailIdx, setDetailIdx] = useState(0);
   const [pickupAddress, setPickupAddress] = useState("");
   const [addingCategory, setAddingCategory] = useState(false);
+  const [detectedCount, setDetectedCount] = useState(0);
+  const [showBanner, setShowBanner] = useState(false);
 
   const addPhotosAndDetect = () => {
     const pics = [itemPhoto("pile-" + Math.random(), "clothing"), itemPhoto("pile-" + Math.random(), "shoes")];
@@ -152,13 +154,17 @@ export default function PostPage() {
         aiGenerated: true,
       })),
     );
+    setDetectedCount(detected.length);
+    setShowBanner(true);
     setStep("categories");
   };
 
   const addMorePhoto = () =>
     setPhotos((p) => [...p, itemPhoto("more-" + Math.random(), "clothing")]);
-  const removeCategory = (draftId: string) =>
+  const removeCategory = (draftId: string) => {
     setDrafts((d) => d.filter((x) => x.id !== draftId));
+    setShowBanner(false);
+  };
   const addNewCategory = (label: string, category: Category = "clothing") => {
     const clean = label.trim();
     if (!clean) return;
@@ -179,6 +185,7 @@ export default function PostPage() {
       },
     ]);
     setAddingCategory(false);
+    setShowBanner(false);
   };
   const patchDraft = (idx: number, patch: Partial<DraftItem>) =>
     setDrafts((d) => d.map((x, i) => (i === idx ? { ...x, ...patch } : x)));
@@ -232,12 +239,9 @@ export default function PostPage() {
             </ol>
           </div>
         </main>
-        <div className="sticky bottom-0 grid grid-cols-2 gap-3 border-t border-border-subtle bg-surface-100/95 p-4 backdrop-blur">
+        <div className="sticky bottom-0 flex flex-col gap-3 border-t border-border-subtle bg-surface-100/95 p-4 backdrop-blur">
           {step === "intro" ? (
-            <>
-              <Button variant="secondary" fullWidth onClick={() => router.push("/")}>Cancel</Button>
-              <Button fullWidth onClick={() => setStep("source")} leftIcon={<Camera size={18} aria-hidden />}>Add Photo to start</Button>
-            </>
+            <Button fullWidth onClick={() => setStep("source")} leftIcon={<Camera size={18} aria-hidden />}>Add Photo to start</Button>
           ) : (
             <>
               <Button variant="secondary" fullWidth onClick={() => setStep("camera")} leftIcon={<Camera size={18} aria-hidden />}>Use Camera</Button>
@@ -308,13 +312,18 @@ export default function PostPage() {
             />
           ) : (
             <div className="animate-fade-in flex flex-col gap-3">
-              <div className="flex items-start gap-2 rounded-md border border-brand/20 bg-brand-subtle/40 p-3">
-                <Sparkles size={16} className="mt-0.5 shrink-0 text-brand" aria-hidden />
-                <p className="text-caption text-ink">
-                  We identified <span className="font-semibold">{drafts.length}</span>{" "}
-                  {drafts.length === 1 ? "category" : "categories"}. Edit before adding details — nothing posts until you publish.
-                </p>
-              </div>
+              {showBanner && (
+                <div className="flex items-start gap-2 rounded-md border border-brand/20 bg-brand-subtle/40 p-3">
+                  <Sparkles size={16} className="mt-0.5 shrink-0 text-brand" aria-hidden />
+                  <p className="text-caption text-ink flex-1">
+                    We identified <span className="font-semibold">{detectedCount}</span>{" "}
+                    {detectedCount === 1 ? "category" : "categories"} from the image posted.
+                  </p>
+                  <button type="button" onClick={() => setShowBanner(false)} aria-label="Dismiss" className="shrink-0 rounded-full p-0.5 text-ink-muted hover:text-ink">
+                    <X size={14} aria-hidden />
+                  </button>
+                </div>
+              )}
               <p className="text-label text-ink-muted">Identified Categories ({drafts.length})</p>
               <div className="flex flex-wrap gap-2">
                 {drafts.map((d) => (
