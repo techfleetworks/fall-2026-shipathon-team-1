@@ -23,11 +23,9 @@ import type {
   User,
 } from "@/lib/types";
 import {
-  bundles as seedBundles,
-  me as seedMe,
-  notifications as seedNotifications,
   posters as seedPosters,
-  threads as seedThreads,
+  scenarioData,
+  type Scenario,
 } from "@/lib/data/seed";
 import { id as makeId } from "@/lib/utils";
 
@@ -89,10 +87,13 @@ interface StoreValue extends StoreState {
   markNotificationsRead: () => void;
   notificationsEnabled: boolean;
   enableNotifications: () => void;
+  scenario: Scenario;
+  switchScenario: (s: Scenario) => void;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
-const STORAGE_KEY = "myvillage.v3";
+const SCENARIO_KEY = "myvillage.scenario";
+const storageKey = (s: string) => `myvillage.v4.${s}`;
 
 const EMPTY_SEARCH: SearchQuery = {
   categories: [],
@@ -108,22 +109,32 @@ function queueOf(item: Item) {
     .sort((a, b) => a.position - b.position);
 }
 
-export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const me = seedMe;
-  const posters = seedPosters;
-
-  const defaultState: StoreState = {
-    bundles: seedBundles,
-    threads: seedThreads,
-    notifications: seedNotifications,
+function makeDefaultState(scenario: Scenario): StoreState {
+  const data = scenarioData(scenario);
+  return {
+    bundles: data.bundles,
+    threads: data.threads,
+    notifications: data.notifications,
     search: EMPTY_SEARCH,
     notificationsEnabled: false,
   };
+}
+
+export function StoreProvider({ children }: { children: React.ReactNode }) {
+  const [scenario, setScenario] = useState<Scenario>(() => {
+    if (typeof window === "undefined") return "giver-new";
+    try { return (window.localStorage.getItem(SCENARIO_KEY) as Scenario) || "giver-new"; } catch { return "giver-new"; }
+  });
+
+  const data = scenarioData(scenario);
+  const me = data.user;
+  const posters = seedPosters;
+  const defaultState = makeDefaultState(scenario);
 
   const [state, setState] = useState<StoreState>(() => {
     if (typeof window === "undefined") return defaultState;
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
+      const raw = window.localStorage.getItem(storageKey(scenario));
       if (raw) {
         const saved = JSON.parse(raw) as Partial<StoreState>;
         return { ...defaultState, ...saved, search: saved.search ?? EMPTY_SEARCH };
@@ -136,11 +147,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!hydrated.current) return;
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      window.localStorage.setItem(storageKey(scenario), JSON.stringify(state));
     } catch {
       /* ignore */
     }
-  }, [state]);
+  }, [state, scenario]);
+
+  const switchScenario = useCallback((s: Scenario) => {
+    try { window.localStorage.setItem(SCENARIO_KEY, s); } catch { /* ignore */ }
+    try { window.localStorage.removeItem(storageKey(s)); } catch { /* ignore */ }
+    setScenario(s);
+    setState(makeDefaultState(s));
+  }, []);
 
   const allItems = useMemo(() => state.bundles.flatMap((b) => b.items), [state.bundles]);
 
@@ -180,8 +198,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     (thread: Thread): Person => {
       const item = getItem(thread.itemId);
       const bundle = item && state.bundles.find((b) => b.id === item.bundleId);
-      if (bundle?.giverId === me.id) return thread.participant; // I'm giver → requester
-      return getPosterOf(thread.itemId) ?? thread.participant; // I'm receiver → poster
+      if (bundle?.giverId === me.id) return thread.participant;
+      return getPosterOf(thread.itemId) ?? thread.participant;
     },
     [getItem, getPosterOf, state.bundles, me.id],
   );
@@ -221,7 +239,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [state.bundles, me.id],
   );
 
-  // My give-aways that have interest (Received).
   const myReceivedItems = useMemo(
     () =>
       myPostedBundles
@@ -230,7 +247,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [myPostedBundles],
   );
 
-  // Items I've requested (Sent).
   const mySentRequests = useMemo<SentRequest[]>(() => {
     const out: SentRequest[] = [];
     for (const b of state.bundles) {
@@ -251,22 +267,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const myThreads = useMemo(
     () =>
-      [...state.threads].sort((a, b) => {
-        const la = a.messages[a.messages.length - 1]?.createdAt ?? "";
-        const lb = b.messages[b.messages.length - 1]?.createdAt ?? "";
-        return lb.localeCompare(la);
-      }),
-    [state.threads],
+      [...state.threads]
+        .filter((t) => {
+          const bundle = state.bundles.find((b) => b.items.some((i) => i.id === t.itemId));
+          if (bundle?.giverId === me.id) return true;
+          const item = bundle?.items.find((i) => i.id === t.itemId);
+          return item?.interests.some((i) => i.receiver.id === me.id && i.state === "accepted");
+        })
+        .sort((a, b) => {
+          const la = a.messages[a.messages.length - 1]?.createdAt ?? "";
+          const lb = b.messages[b.messages.length - 1]?.createdAt ?? "";
+          return lb.localeCompare(la);
+        }),
+    [state.threads, state.bundles, me.id],
   );
 
   const unreadNotifications = state.notifications.filter((n) => !n.read).length;
   const unreadMessages = useMemo(
     () =>
-      state.threads.filter((t) => {
+      myThreads.filter((t) => {
         const last = t.messages[t.messages.length - 1];
         return last && last.from === "them";
       }).length,
-    [state.threads],
+    [myThreads],
   );
 
   // ================= Actions =================
@@ -632,6 +655,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     markNotificationsRead,
     notificationsEnabled: state.notificationsEnabled,
     enableNotifications,
+    scenario,
+    switchScenario,
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

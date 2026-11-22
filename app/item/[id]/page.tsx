@@ -68,6 +68,7 @@ export default function ItemDetailPage() {
   const otherInterests = queue.filter((i) => i.receiver.id !== me.id);
   const thread = getThreadByItem(item.id);
   const isGone = item.status === "gone";
+  const isTaken = item.status === "accepted" && (!mine || mine.state !== "accepted");
   const joined = mine && (mine.state === "waiting" || mine.state === "active");
   const accepted = mine && mine.state === "accepted";
   const closed = mine && (mine.state === "declined" || mine.state === "expired");
@@ -143,8 +144,8 @@ export default function ItemDetailPage() {
       {!(joined && notified) && (
       <div className="sticky bottom-0 z-10 rounded-t-2xl border-t border-border-subtle bg-surface-pure px-4 pb-6 pt-3 shadow-[0_-4px_24px_rgba(0,0,0,0.08)]">
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border" />
-        {isGone ? (
-          <p className="text-body text-ink-muted text-center">This item has found a home and is marked gone.</p>
+        {isGone || isTaken ? (
+          <p className="text-body text-ink-muted text-center">This item has found a home.</p>
         ) : accepted ? (
           <Button fullWidth leftIcon={<MessageCircle size={18} aria-hidden />} onClick={() => thread && router.push(`/inbox/${thread.id}`)}>
             Start chat with {poster?.name}

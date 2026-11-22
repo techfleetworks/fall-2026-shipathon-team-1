@@ -17,12 +17,22 @@ const inHrs = (h: number) => new Date(now + h * 3_600_000).toISOString();
 // ------------------------------------------------------------
 // The current user — one person who both gives and receives.
 // ------------------------------------------------------------
-export const me: User = {
-  id: "me",
-  name: "John",
-  avatar: avatar("John Doe"),
-  location: "Sunset",
+export const personas: Record<string, User> = {
+  john: {
+    id: "me",
+    name: "John",
+    avatar: avatar("John Doe"),
+    location: "Sunset",
+  },
+  sam: {
+    id: "sam",
+    name: "Sam",
+    avatar: avatar("Sam Torres"),
+    location: "Elm Park",
+  },
 };
+
+export const me: User = personas.john;
 
 // ------------------------------------------------------------
 // Posters — resolved from a bundle's giverId (distance from me).
@@ -41,6 +51,7 @@ export const posters: Poster[] = [
   { id: "grace", name: "Grace", avatar: avatar("Grace Mensah"), location: "Cedar Grove", distanceMi: 2.6 },
   { id: "liam", name: "Liam", avatar: avatar("Liam O'Brien"), location: "Birchwood", distanceMi: 3.1 },
   { id: "fatima", name: "Fatima", avatar: avatar("Fatima Saleh"), location: "Elm Park", distanceMi: 2.0 },
+  { id: "sam", name: "Sam", avatar: personas.sam.avatar, location: "Elm Park", distanceMi: 1.2 },
 ];
 
 const meRef = { id: me.id, name: me.name, avatar: me.avatar };
@@ -103,6 +114,15 @@ export const bundles: Bundle[] = [
             createdAt: hrsAgo(10),
             state: "waiting",
             expiresAt: inHrs(22),
+          },
+          {
+            id: "int_mt_sam",
+            itemId: "it_me_toddler",
+            receiver: { id: "sam", name: "Sam", avatar: personas.sam.avatar },
+            position: 4,
+            note: "Hi! These look great for my little one.",
+            createdAt: hrsAgo(6),
+            state: "waiting",
           },
         ],
       },
@@ -369,8 +389,10 @@ export const bundles: Bundle[] = [
         condition: "Used like new",
         flaws: SHOE_FLAW,
         photos: [itemPhoto("deb-shoes-a", "shoes"), itemPhoto("deb-shoes-b", "shoes")],
-        status: "available",
-        interests: [],
+        status: "requested",
+        interests: [
+          { id: "int_ds_sam", itemId: "it_deb_shoes", receiver: { id: "sam", name: "Sam", avatar: personas.sam.avatar }, position: 1, note: "Would love these for my toddler!", createdAt: hrsAgo(1), state: "active", expiresAt: inHrs(47) },
+        ],
       },
     ],
   },
@@ -476,11 +498,9 @@ export const bundles: Bundle[] = [
 ];
 
 // ============================================================
-// Threads — every conversation involving me. The other party is
-// computed per-thread (giver of the item, unless the item is mine).
+// Threads
 // ============================================================
-export const threads: Thread[] = [
-  // I'm the receiver; Annabel (giver) accepted me and shared the address.
+const johnThreads: Thread[] = [
   {
     id: "th_annabel",
     itemId: "it_annabel_shoes",
@@ -493,7 +513,6 @@ export const threads: Thread[] = [
       { id: "ta4", from: "them", type: "pickup", text: "24 Willow Lane", createdAt: hrsAgo(18) },
     ],
   },
-  // I'm the receiver; Priya accepted me.
   {
     id: "th_priya",
     itemId: "it_priya_toys",
@@ -504,7 +523,6 @@ export const threads: Thread[] = [
       { id: "tp2", from: "them", type: "text", text: "When would you like to pick it up?", createdAt: hrsAgo(30) },
     ],
   },
-  // I'm the receiver; Jason accepted me.
   {
     id: "th_jason",
     itemId: "it_jason_clothes",
@@ -515,7 +533,6 @@ export const threads: Thread[] = [
       { id: "tj2", from: "them", type: "text", text: "Thanks for the clothes bundle! My daughter outgrew them.", createdAt: hrsAgo(26) },
     ],
   },
-  // I'm the giver; I accepted Ben on my Shoes.
   {
     id: "th_ben",
     itemId: "it_me_shoes",
@@ -528,11 +545,118 @@ export const threads: Thread[] = [
   },
 ];
 
+const samRef = { id: "sam", name: "Sam", avatar: personas.sam.avatar };
+const samThreads: Thread[] = [
+  {
+    id: "th_deb_sam",
+    itemId: "it_deb_shoes",
+    participant: samRef,
+    pickup: { address: "8 Maple Heights", status: "none" },
+    messages: [
+      { id: "tds1", from: "system", type: "system", text: "Deborah accepted your request", createdAt: minsAgo(30) },
+      { id: "tds2", from: "them", type: "text", text: "Hi Sam! These are ready for pickup whenever works for you.", createdAt: minsAgo(20) },
+    ],
+  },
+];
+
 // ============================================================
 // Notifications
 // ============================================================
-export const notifications: AppNotification[] = [
+const johnNotifications: AppNotification[] = [
   { id: "n1", text: "Annabel accepted your request for the Shoes.", href: "/inbox/th_annabel", createdAt: hrsAgo(20), read: false },
   { id: "n2", text: "Ben is first in line for your Toddler clothes.", href: "/inbox", createdAt: hrsAgo(16), read: false },
   { id: "n3", text: "You're first in line for Sarah M.'s Toddler clothes.", href: "/item/it_sarah_toddler", createdAt: hrsAgo(20), read: true },
 ];
+
+const samNotifications: AppNotification[] = [
+  { id: "ns1", text: "Deborah accepted your request for the Shoes.", href: "/inbox/th_deb_sam", createdAt: minsAgo(30), read: false },
+];
+
+// ============================================================
+// Scenario definitions
+// ============================================================
+export type Scenario = "giver-new" | "receiver-new" | "giver-queue" | "receiver-chat";
+
+export interface ScenarioData {
+  user: User;
+  bundles: Bundle[];
+  threads: Thread[];
+  notifications: AppNotification[];
+}
+
+function stripUserInterests(bs: Bundle[], userId: string): Bundle[] {
+  return bs.map((b) => ({
+    ...b,
+    items: b.items.map((item) => ({
+      ...item,
+      interests: item.interests.filter((i) => i.receiver.id !== userId),
+    })),
+  }));
+}
+
+function withoutAccepted(bs: Bundle[]): Bundle[] {
+  return bs.filter((b) => b.items.every((i) => i.status !== "accepted" && i.status !== "gone"));
+}
+
+export function scenarioData(scenario: Scenario): ScenarioData {
+  const otherBundles = bundles.filter((b) => b.giverId !== "me" && b.giverId !== "sam");
+
+  switch (scenario) {
+    case "giver-new":
+      return {
+        user: personas.john,
+        bundles: stripUserInterests(withoutAccepted(otherBundles), "me"),
+        threads: [],
+        notifications: [],
+      };
+    case "receiver-new":
+      return {
+        user: personas.sam,
+        bundles: [
+          ...stripUserInterests(bundles.filter((b) => b.giverId === "me"), "sam"),
+          ...stripUserInterests(withoutAccepted(otherBundles), "sam"),
+        ],
+        threads: [],
+        notifications: [],
+      };
+    case "giver-queue":
+      return {
+        user: personas.john,
+        bundles: [
+          ...bundles.filter((b) => b.giverId === "me"),
+          ...otherBundles,
+        ],
+        threads: johnThreads,
+        notifications: johnNotifications,
+      };
+    case "receiver-chat": {
+      const debAccepted = bundles
+        .filter((b) => b.giverId === "deborah")
+        .map((b) => ({
+          ...b,
+          items: b.items.map((item) => ({
+            ...item,
+            status: "accepted" as const,
+            interests: item.interests.map((i) =>
+              i.receiver.id === "sam" ? { ...i, state: "accepted" as const } : i,
+            ),
+          })),
+        }));
+      const otherWithoutDeb = otherBundles.filter((b) => b.giverId !== "deborah");
+      return {
+        user: personas.sam,
+        bundles: [
+          ...bundles.filter((b) => b.giverId === "me"),
+          ...debAccepted,
+          ...stripUserInterests(otherWithoutDeb, "sam"),
+        ],
+        threads: samThreads,
+        notifications: samNotifications,
+      };
+    }
+  }
+}
+
+// Legacy exports for backward compat
+export const threads = johnThreads;
+export const notifications = johnNotifications;
