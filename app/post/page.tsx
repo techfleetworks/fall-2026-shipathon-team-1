@@ -688,19 +688,21 @@ function AddressSheet({
           <h1 className="text-heading-2 truncate text-ink">New Give-away Post</h1>
         </div>
       </header>
-      <main className="flex-1 overflow-y-auto px-4 py-4 pb-28">
-        <div className="flex flex-col gap-6">
-          <LocationInput value={value} onChange={onChange} />
+      <div className="shrink-0 px-4 pt-4 pb-2">
+        <LocationInput value={value} onChange={onChange} />
+      </div>
 
+      <div className="flex min-h-0 flex-1 flex-col px-4">
+        <p className="text-heading-3 text-ink shrink-0 pb-3">Listing Preview</p>
+        <div className="flex-1 overflow-y-auto pb-3">
           <div className="flex flex-col gap-3">
-            <p className="text-heading-3 text-ink">Listing Preview</p>
             {drafts.map((d) => (
               <ListingPreviewCard key={d.id} draft={d} />
             ))}
           </div>
         </div>
-      </main>
-      <div className="sticky bottom-0 grid grid-cols-2 gap-3 border-t border-border-subtle bg-surface-100/95 p-4 backdrop-blur">
+      </div>
+      <div className="shrink-0 grid grid-cols-2 gap-3 border-t border-border-subtle bg-surface-100/95 p-4 backdrop-blur">
         <Button variant="secondary" fullWidth onClick={onBack}>Back</Button>
         <Button fullWidth disabled={!value.trim()} onClick={onPublish}>Confirm &amp; Publish</Button>
       </div>
